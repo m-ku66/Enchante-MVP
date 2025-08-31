@@ -10,8 +10,8 @@ const CARD_NUMBERS = [1, 2, 3, 4, 5, 6, 7];
 const CHARACTERS = {
   "Crimson Jack": { affinity: "Red", luck: 80, ego: 2, charm: 50 },
   "Azure Sage": { affinity: "Blue", luck: 90, ego: 6, charm: 4 },
-  "Golden Fox": { affinity: "Yellow", luck: 70, ego: 2, charm: 6 },
-  "Jade Mystic": { affinity: "Green", luck: 100, ego: 3, charm: 5 },
+  "Golden Fox": { affinity: "Yellow", luck: 70, ego: 3, charm: 20 },
+  "Jade Mystic": { affinity: "Green", luck: 100, ego: 3, charm: 10 },
 };
 
 // Create deck with special cards
@@ -114,7 +114,7 @@ const EnchanteDev = () => {
   // Coin system
   const [playerCoins, setPlayerCoins] = useState(500);
   const [aiCoins, setAiCoins] = useState(500);
-  const [coinPool, setCoinPool] = useState(10000);
+  const [coinPool, setCoinPool] = useState(5000);
 
   // Betting system
   const [showDrawBet, setShowDrawBet] = useState(false);
@@ -143,6 +143,27 @@ const EnchanteDev = () => {
   // Ace wager effects
   const [playerTripleDamageCard, setPlayerTripleDamageCard] = useState(null);
   const [aiTripleDamageNext, setAiTripleDamageNext] = useState(false);
+
+  // Affinity helper functions
+  const applyAffinityCoinModifier = useCallback((baseCoins, affinity) => {
+    if (affinity === "Yellow") {
+      return Math.round(baseCoins * 1.25); // +25% more coins
+    } else if (affinity === "Green") {
+      return Math.round(baseCoins * 0.75); // 25% fewer coins
+    }
+    return baseCoins;
+  }, []);
+
+  const getAffinityBettingBonus = useCallback((affinity, betSuccessful) => {
+    if (!betSuccessful) return { damageBonus: 0, defenseBonus: 0 };
+
+    if (affinity === "Red") {
+      return { damageBonus: 0.1, defenseBonus: 0 }; // +10% damage for successful betting
+    } else if (affinity === "Blue") {
+      return { damageBonus: 0, defenseBonus: 0.1 }; // +10% defense bonus for successful betting
+    }
+    return { damageBonus: 0, defenseBonus: 0 };
+  }, []);
 
   // Initialize game
   const startGame = () => {
@@ -180,9 +201,9 @@ const EnchanteDev = () => {
     setGamePhase("game");
 
     // Reset all state
-    setPlayerCoins(500);
-    setAiCoins(500);
-    setCoinPool(10000);
+    setPlayerCoins(100);
+    setAiCoins(100);
+    setCoinPool(5000);
     setActiveBets({ playerDrawBet: null, playerSpeculation: null });
     setPlayerSpeculationUsed(false);
     setPlayerInvestment(null);
@@ -256,17 +277,21 @@ const EnchanteDev = () => {
       isCrit = false,
       bonusMultiplier = 0,
       hasTripleDamage = false,
-      isAiTripleBoost = false
+      isAiTripleBoost = false,
+      hasBettingSuccess = false,
+      defenderBlueBonus = 0
     ) => {
       if (cards.some((card) => card.type !== "standard")) {
         return { damage: 0, isCrit: false, normalDamage: 0, critDamage: 0 };
       }
 
+      // Base damage
       let baseDamage = 0;
       for (const card of cards) {
         baseDamage += card.number;
       }
 
+      // Affinity bonus (color matching)
       let damageAfterAffinity = baseDamage;
       let affinityMatchingCards = 0;
       for (const card of cards) {
@@ -279,11 +304,13 @@ const EnchanteDev = () => {
         damageAfterAffinity = baseDamage * 1.2 + affinityMatchingCards;
       }
 
+      // Crit bonus
       let damageAfterCrit = damageAfterAffinity;
       if (isCrit) {
         damageAfterCrit = damageAfterAffinity * 1.5;
       }
 
+      // Multipliers (like Ace, betting, etc.)
       let damageAfterMultipliers = damageAfterCrit;
       if (bonusMultiplier > 0) {
         damageAfterMultipliers = damageAfterCrit * (1 + bonusMultiplier);
@@ -294,15 +321,34 @@ const EnchanteDev = () => {
         damageAfterMultipliers = damageAfterMultipliers * 3;
       }
 
+      // Extra effects - Affinity quirks (Red betting damage bonus)
+      let damageAfterEffects = damageAfterMultipliers;
+      if (hasBettingSuccess) {
+        const affinityBonus = getAffinityBettingBonus(attackerAffinity, true);
+        if (affinityBonus.damageBonus > 0) {
+          damageAfterEffects =
+            damageAfterMultipliers * (1 + affinityBonus.damageBonus);
+        }
+      }
+
+      // Defense (Ego) - including Blue affinity defense bonus
       const effectiveEgo = Math.max(
         0,
-        (defenderEgo || 0) + (defenderEgoModifier || 0)
+        (defenderEgo || 0) + (defenderEgoModifier || 0) + defenderBlueBonus
       );
-      let finalDamage = Math.max(0, damageAfterMultipliers - effectiveEgo);
+      let finalDamage = Math.max(0, damageAfterEffects - effectiveEgo);
 
+      // Calculate normal damage for comparison
       let normalDamageBeforeEgo = damageAfterAffinity;
       if (bonusMultiplier > 0) {
         normalDamageBeforeEgo = damageAfterAffinity * (1 + bonusMultiplier);
+      }
+      if (hasBettingSuccess) {
+        const affinityBonus = getAffinityBettingBonus(attackerAffinity, true);
+        if (affinityBonus.damageBonus > 0) {
+          normalDamageBeforeEgo =
+            normalDamageBeforeEgo * (1 + affinityBonus.damageBonus);
+        }
       }
       let normalDamageAfterEgo = Math.max(
         0,
@@ -316,7 +362,7 @@ const EnchanteDev = () => {
         critDamage: Math.round(finalDamage),
       };
     },
-    []
+    [getAffinityBettingBonus]
   );
 
   // Check win condition and manage investment timers
@@ -515,11 +561,24 @@ const EnchanteDev = () => {
           ]);
         }
       } else {
-        setPlayerCoins((prev) => prev + 100);
+        // Apply affinity bonus to the 100 coins gained
+        const coinsGained = applyAffinityCoinModifier(
+          100,
+          playerStats.affinity
+        );
+        setPlayerCoins((prev) => prev + coinsGained);
         setDiscardPile((prev) => [...prev, drawnCard]);
         setGameLog((prev) => [
           ...prev,
-          `Player used Ace card (100 coins) - Drew ${drawnCard.type}, discarded immediately (+100 coins)`,
+          `Player used Ace card (100 coins) - Drew ${
+            drawnCard.type
+          }, discarded immediately (+${coinsGained} coins${
+            playerStats.affinity === "Yellow"
+              ? " +25% Yellow bonus!"
+              : playerStats.affinity === "Green"
+              ? " -25% Green penalty"
+              : ""
+          })`,
         ]);
       }
 
@@ -570,34 +629,82 @@ const EnchanteDev = () => {
         if (correctGuess) {
           if (bet.type === "color") {
             const turnsOfEgoBoost = Math.ceil(betAmount / 25);
-            const egoBoostAmount = Math.round(
+            let egoBoostAmount = Math.round(
               playerStats.ego * (betAmount / 100)
             );
+
+            // Apply Blue affinity defense bonus for successful betting
+            const affinityBonus = getAffinityBettingBonus(
+              playerStats.affinity,
+              true
+            );
+            if (affinityBonus.defenseBonus > 0) {
+              egoBoostAmount = Math.round(
+                egoBoostAmount * (1 + affinityBonus.defenseBonus)
+              );
+            }
+
             setPlayerDrawBetBoost({
               amount: egoBoostAmount,
               turnsRemaining: turnsOfEgoBoost,
             });
-            setCoinPool((prev) => Math.max(0, prev - 50));
-            setPlayerCoins((prev) => Math.min(1000, prev + 50));
+
+            // Apply affinity coin modifier
+            const coinsGained = applyAffinityCoinModifier(
+              50,
+              playerStats.affinity
+            );
+            setCoinPool((prev) => Math.max(0, prev - coinsGained));
+            setPlayerCoins((prev) => Math.min(1000, prev + coinsGained));
             setPlayerHand((prev) => [...prev, drawnCard]);
-            logMessage += ` (CORRECT color bet: +50 coins, +${egoBoostAmount} ego (+${betAmount}%) for ${turnsOfEgoBoost} turns!)`;
+
+            logMessage += ` (CORRECT color bet: +${coinsGained} coins${
+              playerStats.affinity === "Yellow"
+                ? " +25% Yellow!"
+                : playerStats.affinity === "Green"
+                ? " -25% Green"
+                : ""
+            }, +${egoBoostAmount} ego (+${betAmount}%${
+              affinityBonus.defenseBonus > 0 ? " +10% Blue!" : ""
+            }) for ${turnsOfEgoBoost} turns!)`;
           } else {
+            // Calculate damage with Red affinity bonus for successful betting
             const damageResult = calculateDamage(
               [drawnCard],
               playerStats.affinity,
               aiStats.ego,
               0,
               playerCritThisTurn || playerGuaranteedCrit,
-              betPercentage
+              betPercentage,
+              false,
+              false,
+              true // hasBettingSuccess for Red affinity bonus
             );
             setDiscardPile((prev) => [...prev, drawnCard]);
             setAiStats((prev) => ({
               ...prev,
               currentLuck: Math.max(0, prev.currentLuck - damageResult.damage),
             }));
-            setCoinPool((prev) => Math.max(0, prev - 100));
-            setPlayerCoins((prev) => Math.min(1000, prev + 100));
-            logMessage += ` (CORRECT suit bet: immediately discarded for ${damageResult.damage} damage, +100 coins!)`;
+
+            // Apply affinity coin modifier
+            const coinsGained = applyAffinityCoinModifier(
+              100,
+              playerStats.affinity
+            );
+            setCoinPool((prev) => Math.max(0, prev - coinsGained));
+            setPlayerCoins((prev) => Math.min(1000, prev + coinsGained));
+
+            logMessage += ` (CORRECT suit bet: immediately discarded for ${
+              damageResult.damage
+            } damage${
+              playerStats.affinity === "Red" ? " +10% Red bonus!" : ""
+            }, +${coinsGained} coins${
+              playerStats.affinity === "Yellow"
+                ? " +25% Yellow!"
+                : playerStats.affinity === "Green"
+                ? " -25% Green"
+                : ""
+            }!)`;
           }
         } else {
           const egoReduction = Math.round(playerStats.ego * (betAmount / 100));
@@ -790,6 +897,9 @@ const EnchanteDev = () => {
         (card) => card.id === playerTripleDamageCard
       );
 
+      // Check if investment qualifies as successful betting for Red affinity
+      const hasBettingSuccess = investmentBonus > 0;
+
       const damageResult = calculateDamage(
         selectedCards,
         playerStats.affinity,
@@ -797,7 +907,9 @@ const EnchanteDev = () => {
         0,
         playerCritThisTurn || playerGuaranteedCrit,
         investmentBonus,
-        hasTripleDamageCard
+        hasTripleDamageCard,
+        false,
+        hasBettingSuccess
       );
 
       if (investmentBonus > 0 && damageResult.damage > 0) {
@@ -829,8 +941,12 @@ const EnchanteDev = () => {
       ).length;
 
       if (perfectMatches > 0) {
-        const coinReward =
+        const baseCoinReward =
           perfectMatches === 1 ? 100 : perfectMatches === 2 ? 150 : 225;
+        const coinReward = applyAffinityCoinModifier(
+          baseCoinReward,
+          playerStats.affinity
+        );
         setCoinPool((prev) => Math.max(0, prev - coinReward));
         setPlayerCoins((prev) => Math.min(1000, prev + coinReward));
       }
@@ -844,10 +960,15 @@ const EnchanteDev = () => {
             ? ` (${damageResult.normalDamage}→${damageResult.critDamage} CRIT!)`
             : ""
         }`;
-        if (investmentBonus > 0)
+        if (investmentBonus > 0) {
           logMessage += ` (+${Math.round(
             investmentBonus * 100
-          )}% investment bonus - now used up)`;
+          )}% investment bonus${
+            hasBettingSuccess && playerStats.affinity === "Red"
+              ? " +10% Red!"
+              : ""
+          } - now used up)`;
+        }
         if (hasTripleDamageCard) logMessage += ` (ACE 3x DAMAGE!)`;
       } else if (selectedCards.some((card) => card.type !== "standard")) {
         logMessage = `Player discarded ${selectedCards[0].type} (no damage)`;
@@ -855,10 +976,21 @@ const EnchanteDev = () => {
         logMessage = `Player discarded ${selectedCards.length} card(s) for ${damageResult.damage} damage`;
       }
 
-      if (perfectMatches > 0)
-        logMessage += ` (${perfectMatches} perfect match: +${
-          perfectMatches === 1 ? 100 : perfectMatches === 2 ? 150 : 225
-        } coins!)`;
+      if (perfectMatches > 0) {
+        const baseCoinReward =
+          perfectMatches === 1 ? 100 : perfectMatches === 2 ? 150 : 225;
+        const coinReward = applyAffinityCoinModifier(
+          baseCoinReward,
+          playerStats.affinity
+        );
+        logMessage += ` (${perfectMatches} perfect match: +${coinReward} coins${
+          playerStats.affinity === "Yellow"
+            ? " +25% Yellow!"
+            : playerStats.affinity === "Green"
+            ? " -25% Green"
+            : ""
+        }!)`;
+      }
 
       setGameLog((prev) => [...prev, logMessage]);
       setSelectedCards([]);
@@ -913,6 +1045,7 @@ const EnchanteDev = () => {
           playerInvestmentEgo +
           playerTemporaryEgoMod +
           (playerDrawBetBoost ? playerDrawBetBoost.amount : 0);
+
         for (const card of singlePlayableCards) {
           const damageResult = calculateDamage(
             [card],
@@ -1008,9 +1141,20 @@ const EnchanteDev = () => {
                     prev.currentLuck + luckRestoration
                   ),
                 }));
-                setCoinPool((prev) => Math.max(0, prev - 100));
-                setPlayerCoins((prev) => Math.min(1000, prev + 100));
-                speculationMessage = ` | Player speculation CORRECT! (+${luckRestoration} luck, +100 coins)`;
+                // Apply affinity coin modifier to speculation reward
+                const coinsGained = applyAffinityCoinModifier(
+                  100,
+                  playerStats.affinity
+                );
+                setCoinPool((prev) => Math.max(0, prev - coinsGained));
+                setPlayerCoins((prev) => Math.min(1000, prev + coinsGained));
+                speculationMessage = ` | Player speculation CORRECT! (+${luckRestoration} luck, +${coinsGained} coins${
+                  playerStats.affinity === "Yellow"
+                    ? " +25% Yellow!"
+                    : playerStats.affinity === "Green"
+                    ? " -25% Green"
+                    : ""
+                })`;
               } else {
                 setPlayerStats((prev) => ({
                   ...prev,
@@ -1019,10 +1163,21 @@ const EnchanteDev = () => {
                     prev.currentLuck + luckRestoration
                   ),
                 }));
-                setCoinPool((prev) => Math.max(0, prev - 200));
-                setPlayerCoins((prev) => Math.min(1000, prev + 200));
+                // Apply affinity coin modifier to speculation reward
+                const coinsGained = applyAffinityCoinModifier(
+                  200,
+                  playerStats.affinity
+                );
+                setCoinPool((prev) => Math.max(0, prev - coinsGained));
+                setPlayerCoins((prev) => Math.min(1000, prev + coinsGained));
                 setPlayerGuaranteedCrit(true);
-                speculationMessage = ` | Player speculation CORRECT! (+${luckRestoration} luck, +200 coins, guaranteed crit!)`;
+                speculationMessage = ` | Player speculation CORRECT! (+${luckRestoration} luck, +${coinsGained} coins${
+                  playerStats.affinity === "Yellow"
+                    ? " +25% Yellow!"
+                    : playerStats.affinity === "Green"
+                    ? " -25% Green"
+                    : ""
+                }, guaranteed crit!)`;
               }
             } else {
               const increasedDamage = Math.round(
@@ -1087,6 +1242,7 @@ const EnchanteDev = () => {
     calculateDamage,
     activeBets,
     aiTripleDamageNext,
+    applyAffinityCoinModifier,
   ]);
 
   // Card selection
@@ -1373,7 +1529,14 @@ const EnchanteDev = () => {
           <div className="text-xs text-gray-600 mb-4">
             <p>• Correct: Drawn card gets 3x damage</p>
             <p>• Wrong: AI next attack gets 3x damage</p>
-            <p>• Special card: Discard immediately, +100 coins</p>
+            <p>
+              • Special card: Discard immediately, +100 coins
+              {playerStats.affinity === "Yellow"
+                ? " (+25% Yellow bonus!)"
+                : playerStats.affinity === "Green"
+                ? " (-25% Green penalty)"
+                : ""}
+            </p>
           </div>
 
           <div className="flex justify-between items-center">
@@ -1412,12 +1575,28 @@ const EnchanteDev = () => {
         {
           type: "color",
           label: "What color will you draw?",
-          reward: "Correct: +ego boost + 50 coins",
+          reward: `Correct: +ego boost${
+            playerStats.affinity === "Blue" ? " (+10% Blue bonus!)" : ""
+          } + ${applyAffinityCoinModifier(50, playerStats.affinity)} coins${
+            playerStats.affinity === "Yellow"
+              ? " (+25% Yellow!)"
+              : playerStats.affinity === "Green"
+              ? " (-25% Green)"
+              : ""
+          }`,
         },
         {
           type: "suit",
           label: "What suit will you draw?",
-          reward: "Correct: Immediate discard with bonus damage + 100 coins",
+          reward: `Correct: Immediate discard with bonus damage${
+            playerStats.affinity === "Red" ? " (+10% Red bonus!)" : ""
+          } + ${applyAffinityCoinModifier(100, playerStats.affinity)} coins${
+            playerStats.affinity === "Yellow"
+              ? " (+25% Yellow!)"
+              : playerStats.affinity === "Green"
+              ? " (-25% Green)"
+              : ""
+          }`,
         },
       ];
     } else if (showSpeculation) {
@@ -1426,12 +1605,30 @@ const EnchanteDev = () => {
         {
           type: "color",
           label: "What color will AI attack with?",
-          reward: "Correct: Heal damage + 100 coins",
+          reward: `Correct: Heal damage + ${applyAffinityCoinModifier(
+            100,
+            playerStats.affinity
+          )} coins${
+            playerStats.affinity === "Yellow"
+              ? " (+25% Yellow!)"
+              : playerStats.affinity === "Green"
+              ? " (-25% Green)"
+              : ""
+          }`,
         },
         {
           type: "suit",
           label: "What suit will AI attack with?",
-          reward: "Correct: Heal damage + 200 coins + guaranteed crit",
+          reward: `Correct: Heal damage + ${applyAffinityCoinModifier(
+            200,
+            playerStats.affinity
+          )} coins${
+            playerStats.affinity === "Yellow"
+              ? " (+25% Yellow!)"
+              : playerStats.affinity === "Green"
+              ? " (-25% Green)"
+              : ""
+          } + guaranteed crit`,
         },
       ];
     }
@@ -1469,7 +1666,12 @@ const EnchanteDev = () => {
                 </div>
                 {currentBet.amount > 0 && (
                   <div className="text-xs text-gray-600 mt-2">
-                    <p>Effect: +{currentBet.amount}% damage boost</p>
+                    <p>
+                      Effect: +{currentBet.amount}% damage boost
+                      {playerStats.affinity === "Red"
+                        ? " (+10% Red if successful!)"
+                        : ""}
+                    </p>
                     <p>
                       Cost: Ego reduced to 0 for{" "}
                       {Math.ceil(currentBet.amount / 25)} turns
@@ -1618,7 +1820,7 @@ const EnchanteDev = () => {
     return (
       <div className="p-6 max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-center mb-8">
-          Enchante - Complete Special Cards
+          Enchante - Affinity Mechanics
         </h1>
         <div className="bg-gray-100 p-6 rounded-lg mb-6 shadow-md">
           <h2 className="text-xl font-semibold mb-4">Choose Your Character</h2>
@@ -1641,6 +1843,16 @@ const EnchanteDev = () => {
                   <div>Luck: {stats.luck}</div>
                   <div>Ego: {stats.ego}</div>
                   <div>Charm: {stats.charm}</div>
+                </div>
+                <div className="text-xs text-gray-500 mt-2">
+                  {stats.affinity === "Red" &&
+                    "High damage for successful betting (+10%)"}
+                  {stats.affinity === "Blue" &&
+                    "High defense for successful betting (+10%)"}
+                  {stats.affinity === "Yellow" &&
+                    "+25% more coins from all sources"}
+                  {stats.affinity === "Green" &&
+                    "-25% fewer coins from all sources"}
                 </div>
               </div>
             ))}
@@ -1720,7 +1932,7 @@ const EnchanteDev = () => {
 
       <div className="mb-4">
         <h1 className="text-2xl font-bold text-center">
-          Enchante - Complete Special Cards
+          Enchante - Affinity Mechanics
         </h1>
         <div className="flex justify-between text-sm mt-2 text-gray-600">
           <div>
@@ -1760,6 +1972,10 @@ const EnchanteDev = () => {
           </div>
           <div className="text-xs mt-1 text-blue-600">
             Affinity: {playerStats.affinity}
+            {playerStats.affinity === "Red" && " (+10% betting damage)"}
+            {playerStats.affinity === "Blue" && " (+10% betting defense)"}
+            {playerStats.affinity === "Yellow" && " (+25% coins)"}
+            {playerStats.affinity === "Green" && " (-25% coins)"}
             {playerTemporaryEgoMod !== 0 && (
               <span
                 className={`ml-2 ${
@@ -1799,11 +2015,14 @@ const EnchanteDev = () => {
             <span>Charm: {aiStats.charm}</span>
             <span>Cards: {aiHand.length}</span>
           </div>
-          {aiTripleDamageNext && (
-            <div className="text-xs mt-1 text-red-600">
-              Next attack: 3x damage from Ace!
-            </div>
-          )}
+          <div className="text-xs mt-1 text-red-600">
+            Affinity: {aiStats.affinity}
+            {aiStats.affinity === "Red" && " (+10% betting damage)"}
+            {aiStats.affinity === "Blue" && " (+10% betting defense)"}
+            {aiStats.affinity === "Yellow" && " (+25% coins)"}
+            {aiStats.affinity === "Green" && " (-25% coins)"}
+            {aiTripleDamageNext && " | Next attack: 3x damage from Ace!"}
+          </div>
         </div>
       </div>
 
@@ -1935,6 +2154,7 @@ const EnchanteDev = () => {
                 const hasTripleDamageCard = selectedCards.some(
                   (card) => card.id === playerTripleDamageCard
                 );
+                const hasBettingSuccess = investmentBonus > 0;
                 const result = calculateDamage(
                   selectedCards,
                   playerStats.affinity,
@@ -1942,7 +2162,9 @@ const EnchanteDev = () => {
                   0,
                   playerCritThisTurn || playerGuaranteedCrit,
                   investmentBonus,
-                  hasTripleDamageCard
+                  hasTripleDamageCard,
+                  false,
+                  hasBettingSuccess
                 );
 
                 let baseDamage = 0;
@@ -1978,6 +2200,11 @@ const EnchanteDev = () => {
                   damageAfterMultipliers = damageAfterMultipliers * 3;
                 }
 
+                let damageAfterEffects = damageAfterMultipliers;
+                if (hasBettingSuccess && playerStats.affinity === "Red") {
+                  damageAfterEffects = damageAfterMultipliers * 1.1;
+                }
+
                 let formula = `${baseDamage}`;
                 if (affinityMatchingCards > 0) {
                   formula += ` → (${baseDamage}×1.2)+${affinityMatchingCards} = ${damageAfterAffinity.toFixed(
@@ -1999,7 +2226,12 @@ const EnchanteDev = () => {
                     1
                   )}×3 = ${damageAfterMultipliers.toFixed(1)}`;
                 }
-                formula += ` → ${damageAfterMultipliers.toFixed(1)}-${
+                if (hasBettingSuccess && playerStats.affinity === "Red") {
+                  formula += ` → ${damageAfterMultipliers.toFixed(
+                    1
+                  )}×1.1 = ${damageAfterEffects.toFixed(1)}`;
+                }
+                formula += ` → ${damageAfterEffects.toFixed(1)}-${
                   aiStats.ego
                 } = ${result.damage}`;
 
@@ -2007,7 +2239,11 @@ const EnchanteDev = () => {
                   playerCritThisTurn || playerGuaranteedCrit
                     ? "⭐ CRIT"
                     : "Normal"
-                }${hasTripleDamageCard ? " | ACE 3X" : ""}`;
+                }${hasTripleDamageCard ? " | ACE 3X" : ""}${
+                  hasBettingSuccess && playerStats.affinity === "Red"
+                    ? " | RED +10%"
+                    : ""
+                }`;
               })()}
             </p>
           </div>

@@ -16,7 +16,7 @@
 
 * **Luck Points**: Player's health/life force (starting amount depends on character type)
 * **Hand**: Cards held by the player (starting hand size 7)
-* **Coins**: Currency for betting mechanics (starting amount 500; max limit per player 1000. There's a 10,000 coin pool that all players can gain from)
+* **Coins**: Currency for betting mechanics (starting amount 100; max limit per player 1000. There's a 5000 coin pool that all players can gain from)
 * **Character**: Chosen avatar with unique abilities and color affinity(Red, Blue, Yellow, Green)
 
 ## Character System
@@ -160,13 +160,13 @@ Each turn, players can choose to EITHER:
 
 ### Betting/Investing
 
-On actions that the player can bet/invest on/in, the maximum amount of coins they can bet/invest is 100 and coins can be bet/invested in 4 increments so 25, 50, 75, 100. Each increment can be treated as a percentage amount in terms of bonus effects, so if a player bets 100 coins on the card they draw from the draw pile being blue for example, their next attack will do 100% more damage if the guess is correct(double damage) or they'll take 100% more damage from their opponent's next attack if wrong. 25 coins = 25% and so on.
+On actions that the player can bet/invest on/in, the maximum amount of coins they can bet/invest is 100 and coins can be bet/invested in 4 increments so 25, 50, 75, 100. Each increment can be treated as a percentage amount in terms of bonus effects, so if a player bets 100 coins on the card they draw from the draw pile being blue for example, their ego will be boosted by 100% for 4 turns if the guess is correct(double). 25 coins = 25% and so on.
 
 For all intents and purposes, special cards don't count as any color or suit. So any card can be discarded onto them when applicaple.
 
 ### Coin Pool
 
-A pool of coins that starts at 10,000 coins, but can be depleted over the course of a game. The coin pool cannot be refilled in a game(unless a special card or character skill does it)
+A pool of coins that starts at 5000 coins, but can be depleted over the course of a game. The coin pool cannot be refilled in a game(unless a special card or character skill does it)
 
 ### Damage Calculation
 
@@ -234,9 +234,116 @@ Would tun out to be:
 * Ego buffs (reduce luck loss)
 * Charm buffs (increase crit chance)
 * Luck resotration
-* Status effects based on card colors/suits
+* Status effects based on card colors/suits(burn, poison, paralysis, etc)
 * Reveal cards in opponent hand
+* Reshuffle the draw deck
+* Reshuffle the discard deck
+* Discard all cards of x color in hand regardless of suit
+* Discard any card you want for 1 discard
+* Remove x amount of cards from opponent hand and put them back into the draw pile
+* Spend coins to restore luck
+* Spend coins to boost charm or ego
+* Switch affinities temporarily
+* Guarantee a critical on next attack
+* Nullify damage of cards of x color temporarily
+* Reduce enemy ego temporarily
+* Damage on opponents that increase/scale with x stat
+* Draw x amount of cards from draw pile
+* Draw the last x cards from discard pile
+* Damage on opponent that deals x status for x turns
+* Heads or Tails-based attack
 * Many more as the game continues development
+
+### Passive Skill Ideas
+
+* Draw 1 card from the draw pile at the start of your turn as an extra action
+  
+* Charm +1 every turn. Stackable up to x number and resets on crit
+  
+* Auto heal on self at the start of the game
+  
+* Affinity bonus damage up
+  
+* +x amount of coins from coin pool every turn
+  
+* Resist x status
+  
+* Reduce damage from stacked discards but increase damage from single card discards
+  
+* Reduce damage from single card discards but increase damage from stacks
+  
+* Increase damage of single card discards but decrease damage of stacks
+  
+* Increase damage of stacks but reduce damage of single discards
+  
+* Increase damage towards x affinity
+  
+* Decrease damage recieved from x affinity
+  
+* Gain x affinity as an extra affinity
+  
+* Damage modifier on all attacks, but no affinity
+  
+* Damage scales with opponent coin amount
+  
+* Ignore opponent ego when attacking
+  
+* Drawing cards restores x amount of luck
+  
+* Gain extra turn on critical hits
+  
+* Immune to Joker swapping
+  
+* Boost damage of cards of x number
+  
+* Draw x amount of cards at the start of the game
+  
+* Increase damage towards female characters
+  
+* Increase damage towards male characters
+  
+* Many more
+  
+
+### Status Ailment Ideas
+
+* Burn: percentage based DOT
+  
+* Poison: flat DOT
+  
+* Freeze: cannot perform actions. Turn skipped
+  
+* Paralyze: chance to not be able to perform actions on your turn
+  
+* Drenched: take increased damage from lightning attacks
+  
+* Coin Lock: unable to gain or use coins
+  
+* Flat: cannot stack cards
+  
+* Dead End: cannot restore luck
+  
+* Confuse: cannot control own actions. Actions done on own turn are random
+  
+* Rage: cannot control own actions. Will always make agressive actions
+  
+* Fear: cannot control own actions. Will always make cautious actions
+  
+* Humbled: ego reduced by x amount
+  
+* Insecure: charm reduced by x amount
+  
+
+### Buff Ideas
+
+* Insurance: gain an overshield that takes damage in place of your luck
+  
+* Auto Heal: restore x amount of luck per turn
+  
+* Ego Trip: ego boosted by x amount
+  
+* Confidence: charm boosted by x amount
+  
 
 ## Win Conditions
 
@@ -317,8 +424,8 @@ Would tun out to be:
 * [x] Add betting with the basic mechanics
 * [x] Troubleshoot discrepancy between damage formula and actual damage dealt in game via logs
 * [x] Add special cards one by one
+* [ ] Add character affinity traits
 * [ ] Add more characters
-* [ ] Polished UI/animations
 
 ### Phase 3: Content & Polish
 
@@ -332,18 +439,19 @@ Would tun out to be:
 ### To Be Determined
 
 * [ ] Specific character abilities and balancing
+* [ ] Gear???
 * [ ] How characters are collected
 * [ ] Special card effects and distribution
 * [ ] AI difficulty scaling
 * [ ] Exact betting formulas and bonuses
 * [ ] Timer/pressure mechanic details
-* [ ] Multiplayer
+* [ ] Multiplayer???
 
 ### Next Steps
 
-* [ ] Figure out game scope
-* [ ] Create basic prototype with core mechanics
-* [ ] Test fundamental gameplay loop
+* [x] Figure out game scope
+* [x] Create basic prototype with core mechanics
+* [x] Test fundamental gameplay loop
 * [ ] Design initial character roster
 * [ ] Develop basic AI opponent
 * [ ] Iterate on balance and feel
