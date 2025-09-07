@@ -9,9 +9,13 @@ const CARD_NUMBERS = [1, 2, 3, 4, 5, 6, 7];
 // Character definitions
 const CHARACTERS = {
   "Crimson Jack": { affinity: "Red", luck: 80, ego: 2, charm: 50 },
-  "Azure Sage": { affinity: "Blue", luck: 90, ego: 6, charm: 4 },
-  "Golden Fox": { affinity: "Yellow", luck: 70, ego: 3, charm: 20 },
-  "Jade Mystic": { affinity: "Green", luck: 100, ego: 3, charm: 10 },
+  "Azure Sage": { affinity: "Blue", luck: 80, ego: 6, charm: 4 },
+  "Golden Fox": { affinity: "Yellow", luck: 70, ego: 3, charm: 10 },
+  "Jade Mystic": { affinity: "Green", luck: 120, ego: 3, charm: 10 },
+  "Ruby Knight": { affinity: "Red", luck: 100, ego: 1, charm: 30 },
+  "Sapphire Seer": { affinity: "Blue", luck: 60, ego: 7, charm: 10 },
+  "Amber Archer": { affinity: "Yellow", luck: 70, ego: 2, charm: 15 },
+  "Emerald Enchantress": { affinity: "Green", luck: 100, ego: 4, charm: 20 },
 };
 
 // Create deck with special cards
