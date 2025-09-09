@@ -2082,7 +2082,7 @@ const EnchanteDev = () => {
         </button>
 
         <h1 className="text-3xl font-bold text-center mb-8">
-          Enchante - Affinity Mechanics
+          Enchante - Version Alpha
         </h1>
         <div className="bg-gray-100 p-6 rounded-lg mb-6 shadow-md">
           <h2 className="text-xl font-semibold mb-4">Choose Your Character</h2>
