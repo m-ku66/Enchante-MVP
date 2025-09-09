@@ -87,6 +87,7 @@ const EnchanteDev = () => {
   const [gamePhase, setGamePhase] = useState("character-select");
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [aiCharacter, setAiCharacter] = useState("Azure Sage");
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Game data
   const [deck, setDeck] = useState([]);
@@ -1820,9 +1821,266 @@ const EnchanteDev = () => {
     );
   };
 
+  // Onboarding modal
+  const renderOnboardingModal = () => {
+    if (!showOnboarding) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-purple-800">
+                Welcome to Enchante!
+              </h2>
+              <button
+                onClick={() => setShowOnboarding(false)}
+                className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Game Objective */}
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-purple-800 mb-2">
+                  Game Objective
+                </h3>
+                <p className="text-gray-700">
+                  Reduce your opponent's Luck to zero by playing cards
+                  strategically. You're magical gamblers using your luck as life
+                  force in high-stakes card duels!
+                </p>
+              </div>
+
+              {/* Character Stats */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-blue-800 mb-3">
+                  Character Stats
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <h4 className="font-semibold text-blue-700">Luck</h4>
+                    <p className="text-sm text-gray-600">
+                      Your health points. Game ends when this reaches zero.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-blue-700">Ego</h4>
+                    <p className="text-sm text-gray-600">
+                      Your defense. Reduces incoming damage from attacks.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-blue-700">Charm</h4>
+                    <p className="text-sm text-gray-600">
+                      Your critical hit chance. Higher charm = more crits!
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Affinities */}
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-green-800 mb-3">
+                  Character Affinities
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-red-500 rounded"></div>
+                    <span className="font-semibold">Red:</span>
+                    <span className="text-sm">
+                      Attack bonuses for all attack boosting actions. Glass
+                      cannons
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-blue-500 rounded"></div>
+                    <span className="font-semibold">Blue:</span>
+                    <span className="text-sm">
+                      Defense bonuses for all defense boosting actions. Turtles
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-yellow-500 rounded"></div>
+                    <span className="font-semibold">Yellow:</span>
+                    <span className="text-sm">
+                      Earn more coins from all sources. Coin farmers
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-green-500 rounded"></div>
+                    <span className="font-semibold">Green:</span>
+                    <span className="text-sm">
+                      Earn fewer coins but typically higher luck. Luck tanks
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card Types */}
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-yellow-800 mb-3">
+                  Card Types
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="font-semibold text-yellow-700">
+                      Standard Cards (112 total)
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      Numbered cards 1-7 in four colors (Red, Blue, Yellow,
+                      Green) and four suits (Hearts, Diamonds, Clubs, Spades).
+                      These deal damage equal to their number.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                    <div>
+                      <h5 className="font-semibold">👑 King (2 cards)</h5>
+                      <p className="text-xs text-gray-600">
+                        Change the discard pile's color and suit
+                      </p>
+                    </div>
+                    <div>
+                      <h5 className="font-semibold">👸 Queen (2 cards)</h5>
+                      <p className="text-xs text-gray-600">
+                        Skip opponent's next turn
+                      </p>
+                    </div>
+                    <div>
+                      <h5 className="font-semibold">🃏 Joker (2 cards)</h5>
+                      <p className="text-xs text-gray-600">
+                        Swap 3 random cards with opponent
+                      </p>
+                    </div>
+                    <div>
+                      <h5 className="font-semibold">🂡 Ace (1 card)</h5>
+                      <p className="text-xs text-gray-600">
+                        Wager on a card draw for triple damage
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Turn Structure */}
+              <div className="bg-orange-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-orange-800 mb-3">
+                  How to Play
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="font-semibold text-orange-700">
+                      On Your Turn, Choose One Main Action:
+                    </h4>
+                    <div className="ml-4 space-y-2">
+                      <div>
+                        <span className="font-semibold">🎯 Draw a Card:</span>
+                        <span className="text-sm text-gray-600 ml-2">
+                          Add a card to your hand. You can bet on what
+                          color/suit you'll draw!
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-semibold">⚔️ Discard Cards:</span>
+                        <span className="text-sm text-gray-600 ml-2">
+                          Play cards to attack your opponent. Must match color
+                          or suit of top discard card.
+                        </span>
+                      </div>
+                    </div>
+                    <br />
+                    <h4 className="font-semibold text-orange-700">
+                      Plus an Optional Extra Action:
+                    </h4>
+                    <div>
+                      <span className="font-semibold">🤑 Speculate:</span>
+                      <span className="text-sm text-gray-600 ml-2">
+                        Guess the incoming attack's color or suit for bonuses!
+                        These can swing games or end them!
+                      </span>
+                    </div>
+                  </div>
+                  <div className="bg-orange-100 p-3 rounded">
+                    <h4 className="font-semibold text-orange-700 mb-2">
+                      Card Matching Rules:
+                    </h4>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>
+                        • You can only discard cards that match the top card's
+                        color OR suit
+                      </li>
+                      <li>
+                        • You can stack up to 3 cards of the same suit for one
+                        powerful attack
+                      </li>
+                      <li>
+                        • Special cards can be played anytime but cost coins
+                      </li>
+                      <li>• Match both color AND suit for bonus coins!</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Betting System */}
+              <div className="bg-pink-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-pink-800 mb-3">
+                  Betting & Strategy
+                </h3>
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-700">
+                    <span className="font-semibold">Coins</span> are your
+                    betting currency. Use them to:
+                  </p>
+                  <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                    <li>
+                      • Bet on what card you'll draw (guess right for bonuses!)
+                    </li>
+                    <li>• Invest in your attacks for extra damage</li>
+                    <li>• Play special cards for powerful effects</li>
+                    <li>• Speculate on opponent's moves (advanced strategy)</li>
+                  </ul>
+                  <p className="text-sm text-gray-700 mt-2">
+                    <span className="font-semibold text-pink-700">
+                      Risk vs Reward:
+                    </span>
+                    Betting can give you powerful bonuses, but wrong guesses
+                    have penalties!
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-center pt-4">
+                <button
+                  onClick={() => setShowOnboarding(false)}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold"
+                >
+                  Start Playing!
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (gamePhase === "character-select") {
     return (
       <div className="p-6 max-w-4xl mx-auto">
+        {renderOnboardingModal()}
+
+        {/* Help icon */}
+        <button
+          onClick={() => setShowOnboarding(true)}
+          className="fixed top-4 right-4 bg-purple-600 hover:bg-purple-700 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold shadow-lg z-40"
+          title="Game Rules"
+        >
+          ?
+        </button>
+
         <h1 className="text-3xl font-bold text-center mb-8">
           Enchante - Affinity Mechanics
         </h1>
@@ -1881,6 +2139,17 @@ const EnchanteDev = () => {
   if (gamePhase === "results") {
     return (
       <div className="p-6 max-w-4xl mx-auto text-center">
+        {renderOnboardingModal()}
+
+        {/* Help icon */}
+        <button
+          onClick={() => setShowOnboarding(true)}
+          className="fixed top-4 right-4 bg-purple-600 hover:bg-purple-700 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold shadow-lg z-40"
+          title="Game Rules"
+        >
+          ?
+        </button>
+
         <h1 className="text-3xl font-bold mb-8">Game Over!</h1>
         <div className="bg-gray-100 p-6 rounded-lg shadow-md">
           <h2 className="text-2xl font-semibold mb-4">
@@ -1930,13 +2199,24 @@ const EnchanteDev = () => {
 
   return (
     <div className="p-4 max-w-6xl mx-auto font-sans">
+      {renderOnboardingModal()}
+
+      {/* Help icon */}
+      <button
+        onClick={() => setShowOnboarding(true)}
+        className="fixed top-4 right-4 bg-purple-600 hover:bg-purple-700 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold shadow-lg z-40"
+        title="Game Rules"
+      >
+        ?
+      </button>
+
       {renderBettingModal()}
       {renderColorDecreeModal()}
       {renderAceWagerModal()}
 
       <div className="mb-4">
         <h1 className="text-2xl font-bold text-center">
-          Enchante - Affinity Mechanics
+          Enchante - Version Alpha
         </h1>
         <div className="flex justify-between text-sm mt-2 text-gray-600">
           <div>
