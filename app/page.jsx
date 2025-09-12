@@ -16,6 +16,8 @@ const CHARACTERS = {
   "Sapphire Seer": { affinity: "Blue", luck: 60, ego: 7, charm: 10 },
   "Amber Archer": { affinity: "Yellow", luck: 70, ego: 2, charm: 15 },
   "Emerald Enchantress": { affinity: "Green", luck: 100, ego: 4, charm: 20 },
+  "Glade Ranger": { affinity: "Green", luck: 150, ego: 1, charm: 10 },
+  "Dazzling Gold": { affinity: "Yellow", luck: 60, ego: 4, charm: 8 },
 };
 
 // Create deck with special cards
